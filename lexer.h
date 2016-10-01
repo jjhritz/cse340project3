@@ -7,6 +7,9 @@
 
 // -------------------------------- token types --------------------------------
 
+//This needs to be in the same order as the static char *reserved[] in lexer.c
+//Tokens in this project will be END_OF_FILE, ARROW, DOUBLEHASH, HASH, ID, and ERROR
+//TODO: Redefine token_type with tokens in project
 typedef enum  { END_OF_FILE = -1,
                 IF = 1,
                 WHILE,
