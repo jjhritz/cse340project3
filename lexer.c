@@ -17,13 +17,16 @@ int line = 1;
 
 
 static int active_token = 0;
+//This needs to be in the same order as the typedef enum token_type in lexer.h
+//Reserved tokens in this project will be "->", "##", "#", "ID"
+//TODO: Alter reserved to contain special token strings
 static char *reserved[] =
     {   "",
-        "IF",
-        "WHILE",
-        "DO",
-        "THEN",
-        "PRINT",
+        "IF",       //keyword
+        "WHILE",    //keyword
+        "DO",       //keyword
+        "THEN",     //keyword
+        "PRINT",    //keyword
         "+",
         "-",
         "/",
@@ -47,7 +50,7 @@ static char *reserved[] =
         "ERROR"
     };
 
-
+//skips spaces in input.  Nothing's going to change here.
 static void skip_space()
 {
     char c;
@@ -66,6 +69,8 @@ static void skip_space()
     }
 }
 
+//test if the string pointed to by s is reserved[1,5]: IF, WHILE, DO, THEN, PRINT
+//Not going to be using keywords so this can probably go.
 static int is_keyword(char *s)
 {
     int i;
@@ -80,6 +85,8 @@ static int is_keyword(char *s)
     return 0;
 }
 
+//Checks if a token is a number.
+//Since NUM is not a valid token for this grammar, this will not be used.
 static token_type scan_number()
 {
     char c;
@@ -87,6 +94,7 @@ static token_type scan_number()
     c = getchar();
     if (isdigit(c))
     {
+        //Truncates any number starting with 0 to just one character
         if (c == '0')
         {
             current_token[token_length] = c;
@@ -111,6 +119,8 @@ static token_type scan_number()
     }
 }
 
+
+//Builds token, checks if a token is an ID type or keyword
 static token_type scan_id_keyword()
 {
     char c;
@@ -145,6 +155,12 @@ static token_type scan_id_keyword()
     }
 }
 
+//Builds token, checks if a token is an ID
+//TODO: Implement function scan_id()
+
+
+
+//Scans the grammar and returns the token type
 token_type getToken()
 {
     char c;
@@ -154,12 +170,19 @@ token_type getToken()
         active_token = 0;
         return t_type;
     }
+
+    //skips the spaces in the input
     skip_space();
+    //start of a new token
     token_length = 0;
+    //null-terminate string
     current_token[0] = '\0';
+    //get a character from stdin
     c = getchar();
     switch (c)
     {
+        //check for unambiguously single-character reserved types
+        //No such types in this grammar.
         case '.': t_type = DOT;        return t_type;
         case '+': t_type = PLUS;       return t_type;
         case '-': t_type = MINUS;      return t_type;
@@ -173,6 +196,10 @@ token_type getToken()
         case ']': t_type = RBRAC;      return t_type;
         case '(': t_type = LPAREN;     return t_type;
         case ')': t_type = RPAREN;     return t_type;
+
+        //Template for multi-character reserved types
+        //TODO: Remove unused cases < and >, replace with cases to determine #, ##, and ->
+        //check token types led by <: "<=", "<>", "<"
         case '<':
             c = getchar();
             if (c == '=')
@@ -189,7 +216,8 @@ token_type getToken()
                 t_type = LESS;
             }
             return t_type;
-       case '>':
+        //check token types led by >: ">=", ">"
+        case '>':
             c = getchar();
             if (c == '=')
             {
@@ -201,16 +229,20 @@ token_type getToken()
                 t_type = GREATER;
             }
             return t_type;
-       default:
-            if (isdigit(c))
+        //TODO: Alter to check if type is ID, EOF, or something not recognized
+        //check if token type is a number, an ID/Keyword, EOF, or something not recognized
+        default:
+            //TODO: condense conditionals 1&2 with isalnum, execute only scan_id()
+            if (isdigit(c)) //Remove case
             {
                 ungetc(c, stdin);
-                t_type = scan_number();
+                t_type = scan_number(); //remove
             }
-            else if (isalpha(c)) // token is either keyword or ID
+            // token is either keyword or ID
+            else if (isalpha(c))
             {
                 ungetc(c, stdin);
-                t_type = scan_id_keyword();
+                t_type = scan_id_keyword(); //remove
             }
             else if (c == EOF)
             {

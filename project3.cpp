@@ -29,7 +29,8 @@ int main (int argc, char* argv[])
                 the project 3 input language.
      */
 
-    switch (task) {
+    switch (task)
+    {
         case 0:
             // TODO: Output information about the input grammar
             break;
