@@ -3,8 +3,12 @@
 #include <fstream>
 #include <algorithm>
 #include <iostream>
-#include "lexer.h"
 #include "project3.h"
+
+extern "C"
+{
+    #include "lexer.h"
+}
 
 using namespace std;
 
