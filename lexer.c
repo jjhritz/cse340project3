@@ -98,7 +98,6 @@ token_type getToken()
     c = getchar();
     switch (c)
     {
-
         //Template for multi-character reserved types
         //check if token is ARROW
         case '-':
