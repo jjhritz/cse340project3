@@ -18,34 +18,12 @@ int line = 1;
 
 static int active_token = 0;
 //This needs to be in the same order as the typedef enum token_type in lexer.h
-//Reserved tokens in this project will be "->", "##", "#", "ID"
-//TODO: Alter reserved to contain special token strings
+//Reserved tokens in this project will be "->", "##", "#", "ID", and "ERROR"
 static char *reserved[] =
     {   "",
-        "IF",       //keyword
-        "WHILE",    //keyword
-        "DO",       //keyword
-        "THEN",     //keyword
-        "PRINT",    //keyword
-        "+",
-        "-",
-        "/",
-        "*",
-        "=",
-        ":",
-        ",",
-        ";",
-        "[",
-        "]",
-        "(",
-        ")",
-        "<>",
-        ">",
-        "<",
-        "<=",
-        ">=",
-        ".",
-        "NUM",
+        "->",
+        "##",
+        "#",
         "ID",
         "ERROR"
     };
@@ -69,59 +47,8 @@ static void skip_space()
     }
 }
 
-//test if the string pointed to by s is reserved[1,5]: IF, WHILE, DO, THEN, PRINT
-//Not going to be using keywords so this can probably go.
-static int is_keyword(char *s)
-{
-    int i;
-
-    for (i = 1; i <= KEYWORDS; i++)
-    {
-        if (strcmp(reserved[i],s) == 0)
-        {
-            return i;
-        }
-    }
-    return 0;
-}
-
-//Checks if a token is a number.
-//Since NUM is not a valid token for this grammar, this will not be used.
-static token_type scan_number()
-{
-    char c;
-
-    c = getchar();
-    if (isdigit(c))
-    {
-        //Truncates any number starting with 0 to just one character
-        if (c == '0')
-        {
-            current_token[token_length] = c;
-            token_length++;
-        }
-        else
-        {
-            while (isdigit(c) && token_length < MAX_TOKEN_LENGTH)
-            {
-                current_token[token_length] = c;
-                token_length++;
-                c = getchar();
-            }
-            ungetc(c, stdin);
-        }
-        current_token[token_length] = '\0';
-        return NUM;
-    }
-    else
-    {
-        return ERROR;
-    }
-}
-
-
-//Builds token, checks if a token is an ID type or keyword
-static token_type scan_id_keyword()
+//Builds token, checks if a token is an ID
+static token_type scan_id()
 {
     char c;
     int k;
@@ -138,15 +65,9 @@ static token_type scan_id_keyword()
         }
         current_token[token_length] = '\0';
         ungetc(c, stdin);
-        k = is_keyword(current_token);
-        if (k == 0)
-        {
-            the_type = ID;
-        }
-        else
-        {
-            the_type = (token_type) k;
-        }
+
+        the_type = ID;
+
         return the_type;
     }
     else
@@ -154,10 +75,6 @@ static token_type scan_id_keyword()
         return ERROR;
     }
 }
-
-//Builds token, checks if a token is an ID
-//TODO: Implement function scan_id()
-
 
 
 //Scans the grammar and returns the token type
@@ -181,68 +98,39 @@ token_type getToken()
     c = getchar();
     switch (c)
     {
-        //check for unambiguously single-character reserved types
-        //No such types in this grammar.
-        case '.': t_type = DOT;        return t_type;
-        case '+': t_type = PLUS;       return t_type;
-        case '-': t_type = MINUS;      return t_type;
-        case '/': t_type = DIV;        return t_type;
-        case '*': t_type = MULT;       return t_type;
-        case '=': t_type = EQUAL;      return t_type;
-        case ':': t_type = COLON;      return t_type;
-        case ',': t_type = COMMA;      return t_type;
-        case ';': t_type = SEMICOLON;  return t_type;
-        case '[': t_type = LBRAC;      return t_type;
-        case ']': t_type = RBRAC;      return t_type;
-        case '(': t_type = LPAREN;     return t_type;
-        case ')': t_type = RPAREN;     return t_type;
 
         //Template for multi-character reserved types
-        //TODO: Remove unused cases < and >, replace with cases to determine #, ##, and ->
-        //check token types led by <: "<=", "<>", "<"
-        case '<':
+        //check if token is ARROW
+        case '-':
             c = getchar();
-            if (c == '=')
+            if (c == '>')
             {
-                t_type = LTEQ;
+                t_type = ARROW;
             }
-            else if (c == '>')
+            else
             {
-                t_type = NOTEQUAL;
+                t_type = ERROR;
+            }
+            return t_type;
+        //check if token is HASH or DOUBLEHASH
+        case '#':
+            c = getchar();
+            if (c == '#')
+            {
+                t_type = DOUBLEHASH;
             }
             else
             {
                 ungetc(c, stdin);
-                t_type = LESS;
+                t_type = HASH;
             }
             return t_type;
-        //check token types led by >: ">=", ">"
-        case '>':
-            c = getchar();
-            if (c == '=')
-            {
-                t_type = GTEQ;
-            }
-            else
-            {
-                ungetc(c, stdin);
-                t_type = GREATER;
-            }
-            return t_type;
-        //TODO: Alter to check if type is ID, EOF, or something not recognized
         //check if token type is a number, an ID/Keyword, EOF, or something not recognized
         default:
-            //TODO: condense conditionals 1&2 with isalnum, execute only scan_id()
-            if (isdigit(c)) //Remove case
+            if (isalnum(c))
             {
                 ungetc(c, stdin);
-                t_type = scan_number(); //remove
-            }
-            // token is either keyword or ID
-            else if (isalpha(c))
-            {
-                ungetc(c, stdin);
-                t_type = scan_id_keyword(); //remove
+                t_type = scan_id();
             }
             else if (c == EOF)
             {
