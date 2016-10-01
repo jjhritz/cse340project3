@@ -57,29 +57,43 @@ void read_grammar()
 
     //read all rules until the end of the input
     getToken();
+
     //while t_type is not DOUBLEHASH
+    while(t_type != DOUBLEHASH)
+    {
+        //don't consume the token
         ungetToken();
         //parse the next rule
         parse_rule();
         //get the next token
         getToken();
+    }
     //endwhile
-
 }
 
 //prints information about the currently-loaded grammar
 void print_grammar_info()
 {
     //for all non_terminal in non_terminals
+    for(int non_terminal = 0; non_terminal < non_terminals.size(); non_terminal++)
+    {
         //print non_terminal.symbol + " "
+        cout << non_terminals[non_terminal].symbol << " ";
+    }
     //end for
 
     //print \n
+    cout << endl;
 
-    //sort terminals
+    //sort terminals ASCIIbetically using strcmp()
+    sort(terminals.begin(), terminals.end());
 
     //for all terminal in terminals
+    for(int terminal = 0; terminal < terminals.size(); terminal++)
+    {
         //print terminal.symbol + ": " + terminal.count + "\n"
+        cout << terminals[terminal].symbol << ": " << terminals[terminal].count << endl;
+    }
     //end for
 }
 
@@ -89,36 +103,62 @@ void get_non_terminals()
     getToken();
 
     //while t_type is not HASH
+    while(t_type != HASH)
+    {
         //create non_terminal from current_token
+        create_non_terminal(current_token);
+        //get next symbol
+        getToken();
+    }
+
 }
 
 //parses a rule to see if complies with the format
 void parse_rule()
 {
+    bool non_term_exists;
     //get left-hand side of rule
     getToken();
 
+    string symbol(current_token);
+
     //Search for non_terminal in non_terminals
-    //if non_terminal is not in non_terminals
-        //syntax_error();
+    non_term_exists = find_non_terminal(symbol);
+
+    //if non_terminal is not in non_terminals, there's a syntax error
+    if(!non_term_exists)
+    {
+        syntax_error();
+    }
     //end if
 
     //get arrow
     getToken();
 
-    //if symbol is not ARROW
-        //syntax_error();
+    //if symbol is not ARROW, there's a syntax error
+    if(t_type != ARROW)
+    {
+        syntax_error();
+    }
     //endif
 
     //create new production rule slot
+    new_production(cur_non_term);
 
     //get next symbol
     getToken();
 
     //if symbol is HASH, add # to the current production rule to represent the empty string
+    if(t_type == HASH)
+    {
+        cur_non_term->productions.back().push_back("#");
+    }
     //else, read the production rule
+    {
+        //don't consume the token
         ungetToken();
         read_production();
+    }
     //endif
 }
 
@@ -135,24 +175,40 @@ void new_production(vector<non_terminal>::iterator non_term)
 void read_production()
 {
     //store iterator pointing to current production vector
+    vector<vector<string>>::iterator production_vector = cur_non_term->productions.end();
 
     //get next symbol
     getToken();
 
+    string symbol(current_token);
+
     //while symbol is not HASH
+    while(t_type != HASH)
+    {
         //if symbol is non-terminal
-            //do nothing
+        if(find_non_terminal(symbol)) {/*do nothing*/}
         //else if symbol is existing terminal
+        else if(find_terminal(symbol))
+        {
             //increment count on terminal
+            cur_term->count++;
+        }
         //else, symbol is a non-existing terminal
+        else
+        {
             //create new terminal using symbol
+            create_terminal(current_token);
             //increment count on terminal
+            cur_term->count++;
+        }
         //endif
 
         //add symbol to current production vector
+        production_vector->push_back(symbol);
 
         //get next symbol
         getToken();
+    }
     //endwhile
 }
 
@@ -160,16 +216,26 @@ void read_production()
 void create_terminal(char* symbol)
 {
     //get size of terminals vector
+    int size = terminals.size();
     //increase size of terminals vector by 1
+    terminals.resize(size + 1);
     //set the symbol of the terminal to the argument
+    string str(symbol);
+    terminals.back().symbol = str;
+    //set cur_term to the newly-created terminal
+    cur_term = terminals.end();
 }
 
 //creates a non-terminal struct in the non_terminals vector
 void create_non_terminal(char* symbol)
 {
     //get size of non-terminals vector
+    int size = non_terminals.size();
     //increase size of the terminals vector by 1
+    non_terminals.resize(size + 1);
     //set the symbol of the non-terminal to the argument
+    string str(symbol);
+    non_terminals.back().symbol = str;
 }
 
 
@@ -190,16 +256,25 @@ bool find_non_terminal(string symbol)
     };
 
     //search non_terminals using std::find_if and is_non_term_symbol
+    vector<non_terminal>::iterator it = find_if(non_terminals.begin(), non_terminals.end(), is_non_term_symbol);
     //if the returned iterator does not equal the end of the vector, the symbol was found
+    if(it != non_terminals.end())
+    {
         //set cur_non_term to found iterator
-        //return true
+        cur_non_term = it;
+
+        return true;
+    }
     //else, symbol was not found and the symbol is not a valid non-terminal
-        //return false
+    else
+    {
+        return false;
+    }
 }
 
 bool find_terminal(string symbol)
 {
-    //lambda function predicate for searching non-terminal vector
+    //lambda function predicate for searching terminal vector
     auto is_term_symbol = [symbol](const terminal& term)
     {
         //if the symbol proviced from the argument is the same as the symbol stored in term
@@ -214,11 +289,19 @@ bool find_terminal(string symbol)
     };
 
     //search terminals using std::find_if and is_term_symbol
+    vector<terminal>::iterator it = find_if(terminals.begin(), terminals.end(), is_term_symbol);
     //if the returned iterator does not equal the end of the vector, the symbol was found
+    if(it != terminals.end())
+    {
         //set cur_term to found iterator
-        //return true
+        cur_term = it;
+        return true;
+    }
     //else, symbol was not found and the symbol is not a registered terminal
-        //return false
+    else
+    {
+        return false;
+    }
 }
 
 //increments the count member of the terminal pointed to by term
