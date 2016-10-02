@@ -14,7 +14,7 @@ using namespace std;
 
 int main (int argc, char* argv[])
 {
-    freopen("/home/student/ClionProjects/cse340project3/tests/test01.txt", "r", stdin);
+    freopen("/home/student/ClionProjects/cse340project3/tests/test06.txt", "r", stdin);
 
     int task;
 
@@ -149,6 +149,9 @@ void parse_rule()
     }
     //endif
 
+    //set the current non-terminal to found_non_term
+    cur_non_term = found_non_term;
+
     //create new production rule slot
     new_production(cur_non_term);
 
@@ -195,6 +198,9 @@ void read_production()
     int cur_prod = distance(non_terminals[cur_non_term].productions.begin(), production_vector);
      */
 
+    //vector to store the non-terminals found in this production rule
+    vector<string> loc_non_terms;
+
     //get next symbol
     getToken();
 
@@ -205,29 +211,41 @@ void read_production()
     {
         //if symbol is non-terminal
         if(find_non_terminal(symbol)) {/*do nothing*/}
-        //else if terminals vector is empty
-        else if(terminals.empty())
+
+        //else if this terminal has not appeared in this rule (it's not found in the vector)
+        else if(find(loc_non_terms.begin(), loc_non_terms.end(), symbol) == loc_non_terms.end())
         {
-            //create new terminal using symbol
-            create_terminal(current_token);
-            //increment count on terminal
-            terminals[cur_term].count++;
-        }
-        //else if symbol is existing terminal
-        else if(find_terminal(symbol))
-        {
-            //increment count on terminal
-            terminals[cur_term].count++;
-        }
-        //else, symbol is a non-existing terminal
-        else
-        {
-            //create new terminal using symbol
-            create_terminal(current_token);
-            //increment count on terminal
-            terminals[cur_term].count++;
+            //if terminals vector is empty
+            if(terminals.empty())
+            {
+                //create new terminal using symbol
+                create_terminal(current_token);
+                //increment count on terminal
+                terminals[cur_term].count++;
+                loc_non_terms.push_back(symbol);
+            }
+            //else if symbol is existing terminal
+            else if(find_terminal(symbol))
+            {
+                //set update cur_term with found_term
+                cur_term = found_term;
+                //increment count on terminal
+                terminals[cur_term].count++;
+                loc_non_terms.push_back(symbol);
+            }
+                //else, symbol is a non-existing terminal
+            else
+            {
+                //create new terminal using symbol
+                create_terminal(current_token);
+                //increment count on terminal
+                terminals[cur_term].count++;
+                loc_non_terms.push_back(symbol);
+            }
+            //endif
         }
         //endif
+
 
         //add symbol to current production vector
         //production_vector->push_back(symbol);
@@ -235,6 +253,7 @@ void read_production()
 
         //get next symbol
         getToken();
+        symbol.assign(current_token);
     }
     //endwhile
 }
@@ -303,8 +322,8 @@ bool find_non_terminal(string symbol)
     //if the returned iterator does not equal the end of the vector, the symbol was found
     if(it != non_terminals.end())
     {
-        //set cur_non_term to position of found iterator
-        cur_non_term = distance(non_terminals.begin(), it);
+        //set found_non_term to position of found iterator
+        found_non_term = distance(non_terminals.begin(), it);
 
         return true;
     }
@@ -336,8 +355,8 @@ bool find_terminal(string symbol)
     //if the returned iterator does not equal the end of the vector, the symbol was found
     if(it != terminals.end())
     {
-        //set cur_term to the position found iterator
-        cur_term = distance(terminals.begin(), it);
+        //set found_term to the position found iterator
+        found_term = distance(terminals.begin(), it);
         return true;
     }
     //else, symbol was not found and the symbol is not a registered terminal

@@ -75,7 +75,9 @@ vector<terminal>::iterator cur_term;            //the current terminal returned 
  */
 
 int cur_term;                               //index of the current terminal
+int found_term;                             //index of the terminal found in a search
 int cur_non_term;                           //index of the current non-terminal
+int found_non_term;                         //index of the non-terminal found in a search
 int cur_prod;                               //index of the current production rule
 
 void create_non_terminal(char* symbol);     //creates a non_terminal and stores it in the non_terminals vector
