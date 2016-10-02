@@ -92,7 +92,7 @@ void print_grammar_info()
     cout << endl;
 
     //sort terminals ASCIIbetically using strcmp()
-    sort(terminals.begin(), terminals.end());
+    sort(terminals.begin(), terminals.end(), compare_terminals_by_symbol);
 
     //for all terminal in terminals
     for(int terminal = 0; terminal < terminals.size(); terminal++)
@@ -126,6 +126,7 @@ void parse_rule()
     //get left-hand side of rule
     getToken();
 
+    //convert current_token to std::string
     string symbol(current_token);
 
     //Search for non_terminal in non_terminals
@@ -157,7 +158,7 @@ void parse_rule()
     //if symbol is HASH, add # to the current production rule to represent the empty string
     if(t_type == HASH)
     {
-        cur_non_term->productions.back().push_back("#");
+        non_terminals[cur_non_term].productions.back().push_back("#");
     }
     //else, read the production rule
     {
@@ -168,20 +169,31 @@ void parse_rule()
     //endif
 }
 
-//add a new production rule slot to the non-terminal pointed to by non_term
-void new_production(vector<non_terminal>::iterator non_term)
+//add a new production rule slot to the non-terminal at index non_term
+void new_production(int non_term)
 {
+    /*
     //get the size of the productions vector of the non-terminal
     int size = non_term->productions.size();
     //increase the size of the productions vector by one.
     non_term->productions.resize(size + 1);
+    */
+    //emplace_back() constructs a new vector<string> in-place
+    non_terminals[non_term].productions.emplace_back();
+    //store the index of the new production
+    cur_prod = non_terminals[non_term].productions.size() - 1;
 }
 
 //reads the production rule
 void read_production()
 {
-    //store iterator pointing to current production vector
-    vector<vector<string>>::iterator production_vector = cur_non_term->productions.end();
+    /*
+    //get iterator pointing to current production vector
+    vector<vector<string>>::iterator production_vector = non_terminals[cur_non_term].productions.end();
+
+    //store the index of the current production vector
+    int cur_prod = distance(non_terminals[cur_non_term].productions.begin(), production_vector);
+     */
 
     //get next symbol
     getToken();
@@ -193,11 +205,19 @@ void read_production()
     {
         //if symbol is non-terminal
         if(find_non_terminal(symbol)) {/*do nothing*/}
+        //else if terminals vector is empty
+        else if(terminals.empty())
+        {
+            //create new terminal using symbol
+            create_terminal(current_token);
+            //increment count on terminal
+            terminals[cur_term].count++;
+        }
         //else if symbol is existing terminal
         else if(find_terminal(symbol))
         {
             //increment count on terminal
-            cur_term->count++;
+            terminals[cur_term].count++;
         }
         //else, symbol is a non-existing terminal
         else
@@ -205,12 +225,13 @@ void read_production()
             //create new terminal using symbol
             create_terminal(current_token);
             //increment count on terminal
-            cur_term->count++;
+            terminals[cur_term].count++;
         }
         //endif
 
         //add symbol to current production vector
-        production_vector->push_back(symbol);
+        //production_vector->push_back(symbol);
+        non_terminals[cur_non_term].productions[cur_prod].push_back(symbol);
 
         //get next symbol
         getToken();
@@ -221,6 +242,7 @@ void read_production()
 //creates a terminal struct in the terminals vector
 void create_terminal(char* symbol)
 {
+    /*
     //get size of terminals vector
     int size = terminals.size();
     //increase size of terminals vector by 1
@@ -230,11 +252,20 @@ void create_terminal(char* symbol)
     terminals.back().symbol = str;
     //set cur_term to the newly-created terminal
     cur_term = terminals.end();
+     */
+
+    //convert char* to std::string
+    string str(symbol);
+    //emplace_back() constructs a new terminal in-place with terminal.symbol initialized to str
+    terminals.emplace_back(terminal(str));
+
+    cur_term = terminals.size() - 1;
 }
 
 //creates a non-terminal struct in the non_terminals vector
 void create_non_terminal(char* symbol)
 {
+    /*
     //get size of non-terminals vector
     int size = non_terminals.size();
     //increase size of the terminals vector by 1
@@ -242,9 +273,15 @@ void create_non_terminal(char* symbol)
     //set the symbol of the non-terminal to the argument
     string str(symbol);
     non_terminals.back().symbol = str;
+     */
+
+    //convert char* to std::string
+    string str(symbol);
+    //emplace_back() constructs a new non-terminal in-place with non-terminal.symbol initialized to str
+    non_terminals.emplace_back(non_terminal(str));
 }
 
-
+//searches the list of non_terminals for symbol
 bool find_non_terminal(string symbol)
 {
     //lambda function predicate for searching non-terminal vector
@@ -266,8 +303,8 @@ bool find_non_terminal(string symbol)
     //if the returned iterator does not equal the end of the vector, the symbol was found
     if(it != non_terminals.end())
     {
-        //set cur_non_term to found iterator
-        cur_non_term = it;
+        //set cur_non_term to position of found iterator
+        cur_non_term = distance(non_terminals.begin(), it);
 
         return true;
     }
@@ -283,7 +320,7 @@ bool find_terminal(string symbol)
     //lambda function predicate for searching terminal vector
     auto is_term_symbol = [symbol](const terminal& term)
     {
-        //if the symbol proviced from the argument is the same as the symbol stored in term
+        //if the symbol provided from the argument is the same as the symbol stored in term
         if(symbol.compare(term.symbol) == 0)
         {
             return true;
@@ -299,8 +336,8 @@ bool find_terminal(string symbol)
     //if the returned iterator does not equal the end of the vector, the symbol was found
     if(it != terminals.end())
     {
-        //set cur_term to found iterator
-        cur_term = it;
+        //set cur_term to the position found iterator
+        cur_term = distance(terminals.begin(), it);
         return true;
     }
     //else, symbol was not found and the symbol is not a registered terminal
@@ -308,12 +345,6 @@ bool find_terminal(string symbol)
     {
         return false;
     }
-}
-
-//increments the count member of the terminal pointed to by term
-void increment_terminal_count(vector<terminal>::iterator term)
-{
-    term->count++;
 }
 
 void syntax_error()
