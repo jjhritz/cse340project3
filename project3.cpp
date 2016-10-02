@@ -14,6 +14,8 @@ using namespace std;
 
 int main (int argc, char* argv[])
 {
+    freopen("/home/student/ClionProjects/cse340project3/tests/test01.txt", "r", stdin);
+
     int task;
 
     if (argc < 2)
