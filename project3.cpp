@@ -27,13 +27,13 @@ int main (int argc, char* argv[])
     //get task to be performed
     task = atoi(argv[1]);
 
-    // TODO: Read the input grammar at this point
+    //read grammar from stdin
     read_grammar();
 
     switch (task)
     {
         case 0:
-            // TODO: Output information about the input grammar
+            //print grammar info
             print_grammar_info();
             break;
 
@@ -164,6 +164,7 @@ void parse_rule()
         non_terminals[cur_non_term].productions.back().push_back("#");
     }
     //else, read the production rule
+    else
     {
         //don't consume the token
         ungetToken();
@@ -175,12 +176,6 @@ void parse_rule()
 //add a new production rule slot to the non-terminal at index non_term
 void new_production(int non_term)
 {
-    /*
-    //get the size of the productions vector of the non-terminal
-    int size = non_term->productions.size();
-    //increase the size of the productions vector by one.
-    non_term->productions.resize(size + 1);
-    */
     //emplace_back() constructs a new vector<string> in-place
     non_terminals[non_term].productions.emplace_back();
     //store the index of the new production
@@ -190,14 +185,6 @@ void new_production(int non_term)
 //reads the production rule
 void read_production()
 {
-    /*
-    //get iterator pointing to current production vector
-    vector<vector<string>>::iterator production_vector = non_terminals[cur_non_term].productions.end();
-
-    //store the index of the current production vector
-    int cur_prod = distance(non_terminals[cur_non_term].productions.begin(), production_vector);
-     */
-
     //vector to store the non-terminals found in this production rule
     vector<string> loc_non_terms;
 
@@ -246,9 +233,7 @@ void read_production()
         }
         //endif
 
-
         //add symbol to current production vector
-        //production_vector->push_back(symbol);
         non_terminals[cur_non_term].productions[cur_prod].push_back(symbol);
 
         //get next symbol
@@ -261,18 +246,6 @@ void read_production()
 //creates a terminal struct in the terminals vector
 void create_terminal(char* symbol)
 {
-    /*
-    //get size of terminals vector
-    int size = terminals.size();
-    //increase size of terminals vector by 1
-    terminals.resize(size + 1);
-    //set the symbol of the terminal to the argument
-    string str(symbol);
-    terminals.back().symbol = str;
-    //set cur_term to the newly-created terminal
-    cur_term = terminals.end();
-     */
-
     //convert char* to std::string
     string str(symbol);
     //emplace_back() constructs a new terminal in-place with terminal.symbol initialized to str
@@ -284,16 +257,6 @@ void create_terminal(char* symbol)
 //creates a non-terminal struct in the non_terminals vector
 void create_non_terminal(char* symbol)
 {
-    /*
-    //get size of non-terminals vector
-    int size = non_terminals.size();
-    //increase size of the terminals vector by 1
-    non_terminals.resize(size + 1);
-    //set the symbol of the non-terminal to the argument
-    string str(symbol);
-    non_terminals.back().symbol = str;
-     */
-
     //convert char* to std::string
     string str(symbol);
     //emplace_back() constructs a new non-terminal in-place with non-terminal.symbol initialized to str
@@ -369,4 +332,91 @@ bool find_terminal(string symbol)
 void syntax_error()
 {
     cout << "Syntax error line " << line << endl;
+}
+
+//calculates the FIRST sets for all non-terminals in the grammar
+void calc_first_sets()
+{
+    //do
+        //sets_changed = false
+        //for all non_terminal in non_terminals
+            //for all production in non_terminal.productions
+                //symbol = 0
+                //if non_terminal.productions[production][symbol] is a terminal
+                    //run rule 1
+                //if non_terminal.productions[production][symbol] is "#"
+                    //run rule 2
+                //else if non_terminal.productions[production][symbol].first_set contains "#"
+                    //Run the rule 4
+                //else
+                    //run rule 3
+    //while sets_changed == true
+
+    //for all non_terminal in non_terminals
+        //if non_terminal.contains_empty_str == true
+            //add "#" to the front of non_terminal.first_set
+        //endif
+    //endfor
+}
+
+//adds the terminal symbol at symbol_index to the FIRST set of the current non-terminal
+void first_rule_1(int symbol_index)
+{
+    //if non_terminals[cur_non_term].first_set does not contain the terminal at symbol_index
+        //create vector for FIRST of terminal (i.e. just the terminal symbol)
+        //std::sort non_terminals[cur_non_term].first_set
+        //use std::union to perform union between two vectors.
+        //std::sort non_terminals[cur_non_term].first_set
+        //set sets_changed to true;
+    //endif
+}
+
+//flags "#" must be added to the current non-terminal's FIRST set
+void first_rule_2()
+{
+    //if non_terminals[cur_non_term].contains_empty_str is False
+        //set non_terminals[cur_non_term].contains_empty_str to True
+        //set sets_changed to True
+    //endif
+}
+
+//adds the FIRST set of the non-terminal at symbol_index to the FIRST set of the current non-terminal
+void first_rule_3(int symbol_index)
+{
+
+    //create vector to store set difference
+    //use find_non_terminal to locate the non_terminal whose symbol is at
+    // non_terminals[cur_non_term].productions[cur_prod][symbol]
+
+    //std::sort non_terminals[cur_non_term].first_set
+    //std::sort non_terminals[found_non_term].first_set
+
+    //std::set_difference between non_terminals[cur_non_term].first_set and non_terminals[found_non_term].first_set
+    //resize storage vector
+
+    //if the storage vector is NOT empty
+        //append the storage vector to non_terminals[cur_non_term].first_set
+        //std::sort non_terminals[cur_non_term].first_set
+        //set sets_changed to True
+    //endif
+}
+
+//Keeps adding the FIRST sets of non-terminals whose FIRST sets contain "#" until a terminating FIRST set is encountered
+void first_rule_4(int symbol_index)
+{
+    //bool terminated = false
+    //symbol = symbol_index
+    //do
+        //if non_terminals[cur_non_term].productions[cur_prod][symbol] is a terminal
+            //call rule 1
+            //terminated = true
+        //else, the symbol is a non-terminal
+            //use rule 3 to add symbol's FIRST set to cur_non_term's FIRST set
+            //symbol++
+        //endif
+    //while terminated == false && symbol < non_terminals[cur_non_term].productions[cur_prod].size()
+
+    //if terminated == false, all FIRST sets in the production rule
+        //call rule 2 to add "#" to cur_non_term's FIRST set
+    //endif
 }

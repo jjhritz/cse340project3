@@ -23,6 +23,7 @@ typedef struct non_terminal
      */
     vector<vector<string>> productions;
     vector<string> first_set;
+    bool contains_empty_str = false;    //flags if the FIRST set contains the empty string so "#" can be added to the set
     vector<string> follow_set;
 
     //default constructor
@@ -80,6 +81,8 @@ int cur_non_term;                           //index of the current non-terminal
 int found_non_term;                         //index of the non-terminal found in a search
 int cur_prod;                               //index of the current production rule
 
+bool sets_changed;                          //flag to determine if a FIRST/FOLLOW set changes during a calculation
+
 void create_non_terminal(char* symbol);     //creates a non_terminal and stores it in the non_terminals vector
 void create_terminal(char* symbol);         //creates a terminal and stores it in the terminals vector
 void get_non_terminals();                   //gets the non-terminals at the beginning of the input
@@ -93,6 +96,12 @@ bool find_non_terminal(string symbol);       //determines if symbol is a non-ter
 bool find_terminal(string symbol);           //determines if symbol is a terminal
 
 void print_grammar_info();                   //prints information about the currently-loaded grammar
+
+void calc_first_sets();                      //calculates the first sets of the grammar
+void first_rule_1(int symbol_index);         //adds the terminal symbol at symbol_index to the FIRST set of the current non-terminal
+void first_rule_2();                         //flags "#" must be added to the FIRST set
+void first_rule_3(int symbol_index);         //adds the FIRST set of the symbol at symbol_index to the FIRST set of the current non-terminal
+void first_rule_4(int symbol_index);         //scans the list of symbols for a FIRST set that does not contain "#" and adds it to the FIRST set of the current non-terminal
 
 
 
