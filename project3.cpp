@@ -14,7 +14,7 @@ using namespace std;
 
 int main (int argc, char* argv[])
 {
-    freopen("/home/student/ClionProjects/cse340project3/tests/test04.txt", "r", stdin);
+    freopen("/home/student/ClionProjects/cse340project3/tests/test02.txt", "r", stdin);
 
     int task;
 
