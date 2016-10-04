@@ -27,7 +27,10 @@ typedef struct non_terminal
     vector<string> follow_set;
 
     //default constructor
-    non_terminal(){};
+    non_terminal()
+    {
+
+    };
 
     //constructor that specifices symbol string
     non_terminal(string init_symbol)

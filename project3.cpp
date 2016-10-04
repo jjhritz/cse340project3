@@ -14,7 +14,7 @@ using namespace std;
 
 int main (int argc, char* argv[])
 {
-    freopen("/home/student/ClionProjects/cse340project3/tests/test03.txt", "r", stdin);
+    freopen("/home/student/ClionProjects/cse340project3/tests/test04.txt", "r", stdin);
 
     int task;
 
@@ -349,7 +349,7 @@ void calc_first_sets()
     {
         //new round, reset flags
         sets_changed = false;
-        rule_applied = false;
+
 
         //for all non_terminal in non_terminals
         for(cur_non_term = 0; cur_non_term < non_terminals.size(); cur_non_term++)
@@ -357,6 +357,7 @@ void calc_first_sets()
             //for all production in non_terminal.productions
             for(cur_prod = 0; cur_prod < non_terminals[cur_non_term].productions.size(); cur_prod++)
             {
+                rule_applied = false;
                 //start at the first symbol of the production rule
                 symbol = 0;
                 //if non_terminal.productions[production][symbol] is a terminal
@@ -422,40 +423,66 @@ void calc_first_sets()
 //adds the terminal symbol at symbol_index to the FIRST set of the current non-terminal
 void first_rule_1(int symbol_index)
 {
-    //create vector for FIRST of terminal (i.e. just the terminal symbol)
-    vector<string> symbol (1, non_terminals[cur_non_term].productions[cur_prod][symbol_index]);
-
-    //create vector to store set difference between symbol and cur_term.first_set
-    vector<string> diff(20);
-
-    //iterator that will point to the last element of the difference
-    //needed to know where the end of the non-junk content is so diff can be resized
-    vector<string>::iterator it;
-
-    //sort non_terminals[cur_non_term].first_set
-    sort(non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end());
-
-    //get the set difference between non_terminals[cur_non_term].first_set and symbol
-    it = set_difference (non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end(),
-                         symbol.begin(), symbol.end(),
-                         diff.begin()
-                        );
-
-    //resize diff to fit its non-junk contents
-    diff.resize(it - diff.begin());
-
-    //if diff is not empty, non_terminals[cur_non_term].first_set does not contain the terminal at symbol_index
-    if(!diff.empty())
+    //if cur_non_term.first_set is empty, then just add the terminal
+    if(non_terminals[cur_non_term].first_set.empty())
     {
-        //add the contents of diff to non_terminals[cur_non_term].first_set
-        non_terminals[cur_non_term].first_set.insert(non_terminals[cur_non_term].first_set.end(),
-                                                        diff.begin(), diff.end());
-        //sort non_terminals[cur_non_term].first_set
-        sort(non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end());
+        non_terminals[cur_non_term].first_set.push_back(non_terminals[cur_non_term].productions[cur_prod][symbol_index]);
         //set sets_changed to true
         sets_changed = true;
     }
-    //endif
+
+    //else, see if the terminal exists in the FIRST set and add it if it does not
+    else
+    {
+        //create vector for FIRST of terminal (i.e. just the terminal symbol)
+        vector<string> symbol (1, non_terminals[cur_non_term].productions[cur_prod][symbol_index]);
+
+        //create vector to store set difference between symbol and cur_term.first_set
+        vector<string> diff(20);
+
+        //iterator that will point to the last element of the difference
+        //needed to know where the end of the non-junk content is so diff can be resized
+        vector<string>::iterator it;
+
+        //sort non_terminals[cur_non_term].first_set
+        sort(non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end());
+
+        //get the set difference between symbol and non_terminals[cur_non_term].first_set
+        //ORDER IS IMPORTANT.
+        // std::set_difference checks for elements that are present in the set provided by the first two arguments
+        // but are not present in the set provided by the second two arguments
+        it = set_difference (symbol.begin(), symbol.end(),
+                             non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end(),
+                             diff.begin()
+        );
+
+        //resize diff to fit its non-junk contents
+        diff.resize(it - diff.begin());
+
+        //if diff is not empty, non_terminals[cur_non_term].first_set does not contain the terminal at symbol_index
+        if(!diff.empty())
+        {
+            //vector to store set_union
+            vector<string> first_union(20);
+
+            //perform a set union between Symbol and cur_non_term.first_set, stored in first_union
+            it = set_union(non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end(),
+                           symbol.begin(), symbol.end(),
+                           first_union.begin());
+
+            //resize first_union to fit contents
+            first_union.resize(it - first_union.begin());
+
+            //copy first_union into cur_non_term.first_set
+            non_terminals[cur_non_term].first_set.assign(first_union.begin(), first_union.end());
+            //sort non_terminals[cur_non_term].first_set
+            sort(non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end());
+            //set sets_changed to true
+            sets_changed = true;
+        }
+        //endif
+    }
+   //endif
 }
 
 //flags "#" must be added to the current non-terminal's FIRST set
@@ -475,43 +502,78 @@ void first_rule_2()
 //adds the FIRST set of the non-terminal at symbol_index to the FIRST set of the current non-terminal
 void first_rule_3(int symbol_index)
 {
-    //create vector to store set difference
-    vector<string> diff(20);
+    //if cur_non_term.first_set is empty, then just add the first set of the non-terminal
+    if(non_terminals[cur_non_term].first_set.empty()) {
+        //use find_non_terminal to locate the non_terminal whose symbol is at
+        //non_terminals[cur_non_term].productions[cur_prod][symbol]
+        find_non_terminal(non_terminals[cur_non_term].productions[cur_prod][symbol_index]);
 
-    //iterator that will point to the last element of the difference
-    //needed to know where the end of the non-junk content is so diff can be resized
-    vector<string>::iterator it;
+        //if the FIRST set of the found non-terminal is not empty, add it to the FIRST set of cur_non_term
+        //copy the FIRST set of the found non-terminal to the current non-terminal
+        if (!non_terminals[found_non_term].first_set.empty()) {
+            non_terminals[cur_non_term].first_set.assign(non_terminals[found_non_term].first_set.begin(),
+                                                         non_terminals[found_non_term].first_set.end());
 
-    //use find_non_terminal to locate the non_terminal whose symbol is at
-    //non_terminals[cur_non_term].productions[cur_prod][symbol]
-    find_non_terminal(non_terminals[cur_non_term].productions[cur_prod][symbol_index]);
+            //set sets_changed to true
+            sets_changed = true;
+        }
+        //endif
+    }
+    //endif
 
-    //sort non_terminals[cur_non_term].first_set
-    sort(non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end());
-    //sort non_terminals[found_non_term].first_set
-    sort(non_terminals[found_non_term].first_set.begin(), non_terminals[found_non_term].first_set.end());
-
-    //set difference between non_terminals[cur_non_term].first_set and non_terminals[found_non_term].first_set
-    it = set_difference (non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end(),
-                         non_terminals[found_non_term].first_set.begin(), non_terminals[found_non_term].first_set.end(),
-                         diff.begin()
-    );
-
-    //resize storage vector to fit its non-junk contents
-    diff.resize(it - diff.begin());
-
-    //if diff is not empty, some symbols in non_terminals[found_non_term].first_set
-    // are not in non_terminals[cur_non_term].first_set
-    if(!diff.empty())
+    //else, see if the terminal exists in the FIRST set and add it if it does not
+    else
     {
-        //append the diff to non_terminals[cur_non_term].first_set
-        non_terminals[cur_non_term].first_set.insert(non_terminals[cur_non_term].first_set.begin(),
-                                                     diff.begin(), diff.end()
-                                                    );
+        //create vector to store set difference
+        vector<string> diff(20);
+
+        //iterator that will point to the last element of the difference
+        //needed to know where the end of the non-junk content is so diff can be resized
+        vector<string>::iterator it;
+
+        //use find_non_terminal to locate the non_terminal whose symbol is at
+        //non_terminals[cur_non_term].productions[cur_prod][symbol]
+        find_non_terminal(non_terminals[cur_non_term].productions[cur_prod][symbol_index]);
+
         //sort non_terminals[cur_non_term].first_set
         sort(non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end());
-        //set sets_changed to true
-        sets_changed = true;
+        //sort non_terminals[found_non_term].first_set
+        sort(non_terminals[found_non_term].first_set.begin(), non_terminals[found_non_term].first_set.end());
+
+        //set difference between non_terminals[cur_non_term].first_set and non_terminals[found_non_term].first_set
+        //ORDER IS IMPORTANT.
+        // std::set_difference checks for elements that are present in the set provided by the first two arguments
+        // but are not present in the set provided by the second two arguments
+        it = set_difference (non_terminals[found_non_term].first_set.begin(), non_terminals[found_non_term].first_set.end(),
+                             non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end(),
+                             diff.begin()
+        );
+
+        //resize storage vector to fit its non-junk contents
+        diff.resize(it - diff.begin());
+
+        //if diff is not empty, some symbols in non_terminals[found_non_term].first_set
+        // are not in non_terminals[cur_non_term].first_set
+        if(!diff.empty())
+        {
+            //vector to store set_union
+            vector<string> first_union(20);
+
+            //perform a set union between Symbol and cur_non_term.first_set, stored in first_union
+            it = set_union(non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end(),
+                           non_terminals[found_non_term].first_set.begin(), non_terminals[found_non_term].first_set.end(),
+                           first_union.begin());
+
+            //resize first_union to fit contents
+            first_union.resize(it - first_union.begin());
+            //copy first_union into cur_non_term.first_set
+            non_terminals[cur_non_term].first_set.assign(first_union.begin(), first_union.end());
+            //sort non_terminals[cur_non_term].first_set
+            sort(non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end());
+            //set sets_changed to true
+            sets_changed = true;
+        }
+        //endif
     }
     //endif
 }
@@ -550,6 +612,7 @@ void first_rule_4(int symbol_index)
             {
                 terminated = true;
             }
+            //endif
         }
         //endif
     }
