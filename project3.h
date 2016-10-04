@@ -102,7 +102,7 @@ void first_rule_1(int symbol_index);         //adds the terminal symbol at symbo
 void first_rule_2();                         //flags "#" must be added to the FIRST set
 void first_rule_3(int symbol_index);         //adds the FIRST set of the symbol at symbol_index to the FIRST set of the current non-terminal
 void first_rule_4(int symbol_index);         //scans the list of symbols for a FIRST set that does not contain "#" and adds it to the FIRST set of the current non-terminal
-
+void print_first_sets();                     //prints the FIRST sets of the grammar
 
 
 

@@ -14,7 +14,7 @@ using namespace std;
 
 int main (int argc, char* argv[])
 {
-    //freopen("/home/student/ClionProjects/cse340project3/tests/test03.txt", "r", stdin);
+    freopen("/home/student/ClionProjects/cse340project3/tests/test03.txt", "r", stdin);
 
     int task;
 
@@ -38,9 +38,10 @@ int main (int argc, char* argv[])
             break;
 
         case 1:
-            // TODO: Calculate FIRST sets for the input grammar
-            // Hint: You better do the calculation in a function and call it here!
-            // TODO: Output the FIRST sets in the exact order and format required
+            //Calculate FIRST sets for the input grammar
+            calc_first_sets();
+            //Output the FIRST sets in the exact order and format required
+            print_first_sets();
             break;
 
         case 2:
@@ -337,37 +338,123 @@ void syntax_error()
 //calculates the FIRST sets for all non-terminals in the grammar
 void calc_first_sets()
 {
-    //do
-        //sets_changed = false
+    //the current symbol to be added to the FIRST set of the current non-terminal
+    int symbol = 0;
+
+    //keeps track if a terminating rule has been applied
+    bool rule_applied = false;
+
+    //iterate through all the production rules for all the non-terminals
+    do
+    {
+        //new round, reset flags
+        sets_changed = false;
+        rule_applied = false;
+
         //for all non_terminal in non_terminals
+        for(cur_non_term = 0; cur_non_term < non_terminals.size(); cur_non_term++)
+        {
             //for all production in non_terminal.productions
-                //symbol = 0
+            for(cur_prod = 0; cur_prod < non_terminals[cur_non_term].productions.size(); cur_prod++)
+            {
+                //start at the first symbol of the production rule
+                symbol = 0;
                 //if non_terminal.productions[production][symbol] is a terminal
-                    //run rule 1
+                if(find_terminal(non_terminals[cur_non_term].productions[cur_prod][symbol]))
+                {
+                    //run rule 1 to add the terminal to the FIRST set
+                    first_rule_1(symbol);
+                    rule_applied = true;
+                }
                 //if non_terminal.productions[production][symbol] is "#"
-                    //run rule 2
-                //else if non_terminal.productions[production][symbol].first_set contains "#"
-                    //Run the rule 4
-                //else
-                    //run rule 3
-    //while sets_changed == true
+                else if(non_terminals[cur_non_term].productions[cur_prod][symbol].compare("#") == 0)
+                {
+                    //run rule 2 to flag "#" must be added to the FIRST set
+                    first_rule_2();
+                    rule_applied = true;
+                }
+                //endif
+
+                if(!rule_applied)
+                {
+                    //find the non-terminal whose symbol is non_terminals[cur_non_term].productions[cur_prod][symbol]
+                    find_non_terminal(non_terminals[cur_non_term].productions[cur_prod][symbol]);
+
+                    //if non_terminals[found_non_term].first_set contains "#"
+                    if(non_terminals[found_non_term].contains_empty_str == true)
+                    {
+                        //Run the rule 4 to add non_terminals[found_non_term].first_set to cur_non_term.first_set
+                        // and continue adding to the FIRST set until a terminating character is found
+                        // or the end of the production rule is reached
+                        first_rule_4(symbol);
+                    }
+                    //else, found_non_term.first_set does not contain "#"
+                    // and thus only found_non_term.first_set should be added to cur_non_term.first_set
+                    else
+                    {
+                        //run rule 3 to add found_non_term.first_set to cur_non_term.first_set
+                        first_rule_3(symbol);
+                    }
+                    //endif
+                }
+                //endif
+            }
+            //endfor
+        }
+        //endfor
+    }
+    while(sets_changed == true);
 
     //for all non_terminal in non_terminals
+    for(cur_non_term = 0; cur_non_term < non_terminals.size(); cur_non_term++)
+    {
         //if non_terminal.contains_empty_str == true
+        if(non_terminals[cur_non_term].contains_empty_str)
+        {
             //add "#" to the front of non_terminal.first_set
+            non_terminals[cur_non_term].first_set.insert(non_terminals[cur_non_term].first_set.begin(), "#");
+        }
         //endif
+    }
     //endfor
 }
 
 //adds the terminal symbol at symbol_index to the FIRST set of the current non-terminal
 void first_rule_1(int symbol_index)
 {
-    //if non_terminals[cur_non_term].first_set does not contain the terminal at symbol_index
-        //create vector for FIRST of terminal (i.e. just the terminal symbol)
-        //std::sort non_terminals[cur_non_term].first_set
-        //use std::union to perform union between two vectors.
-        //std::sort non_terminals[cur_non_term].first_set
-        //set sets_changed to true;
+    //create vector for FIRST of terminal (i.e. just the terminal symbol)
+    vector<string> symbol (1, non_terminals[cur_non_term].productions[cur_prod][symbol_index]);
+
+    //create vector to store set difference between symbol and cur_term.first_set
+    vector<string> diff(20);
+
+    //iterator that will point to the last element of the difference
+    //needed to know where the end of the non-junk content is so diff can be resized
+    vector<string>::iterator it;
+
+    //sort non_terminals[cur_non_term].first_set
+    sort(non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end());
+
+    //get the set difference between non_terminals[cur_non_term].first_set and symbol
+    it = set_difference (non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end(),
+                         symbol.begin(), symbol.end(),
+                         diff.begin()
+                        );
+
+    //resize diff to fit its non-junk contents
+    diff.resize(it - diff.begin());
+
+    //if diff is not empty, non_terminals[cur_non_term].first_set does not contain the terminal at symbol_index
+    if(!diff.empty())
+    {
+        //add the contents of diff to non_terminals[cur_non_term].first_set
+        non_terminals[cur_non_term].first_set.insert(non_terminals[cur_non_term].first_set.end(),
+                                                        diff.begin(), diff.end());
+        //sort non_terminals[cur_non_term].first_set
+        sort(non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end());
+        //set sets_changed to true
+        sets_changed = true;
+    }
     //endif
 }
 
@@ -375,48 +462,137 @@ void first_rule_1(int symbol_index)
 void first_rule_2()
 {
     //if non_terminals[cur_non_term].contains_empty_str is False
+    if(!non_terminals[cur_non_term].contains_empty_str)
+    {
         //set non_terminals[cur_non_term].contains_empty_str to True
+        non_terminals[cur_non_term].contains_empty_str = true;
         //set sets_changed to True
+        sets_changed = true;
+    }
     //endif
 }
 
 //adds the FIRST set of the non-terminal at symbol_index to the FIRST set of the current non-terminal
 void first_rule_3(int symbol_index)
 {
-
     //create vector to store set difference
+    vector<string> diff(20);
+
+    //iterator that will point to the last element of the difference
+    //needed to know where the end of the non-junk content is so diff can be resized
+    vector<string>::iterator it;
+
     //use find_non_terminal to locate the non_terminal whose symbol is at
-    // non_terminals[cur_non_term].productions[cur_prod][symbol]
+    //non_terminals[cur_non_term].productions[cur_prod][symbol]
+    find_non_terminal(non_terminals[cur_non_term].productions[cur_prod][symbol_index]);
 
-    //std::sort non_terminals[cur_non_term].first_set
-    //std::sort non_terminals[found_non_term].first_set
+    //sort non_terminals[cur_non_term].first_set
+    sort(non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end());
+    //sort non_terminals[found_non_term].first_set
+    sort(non_terminals[found_non_term].first_set.begin(), non_terminals[found_non_term].first_set.end());
 
-    //std::set_difference between non_terminals[cur_non_term].first_set and non_terminals[found_non_term].first_set
-    //resize storage vector
+    //set difference between non_terminals[cur_non_term].first_set and non_terminals[found_non_term].first_set
+    it = set_difference (non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end(),
+                         non_terminals[found_non_term].first_set.begin(), non_terminals[found_non_term].first_set.end(),
+                         diff.begin()
+    );
 
-    //if the storage vector is NOT empty
-        //append the storage vector to non_terminals[cur_non_term].first_set
-        //std::sort non_terminals[cur_non_term].first_set
-        //set sets_changed to True
+    //resize storage vector to fit its non-junk contents
+    diff.resize(it - diff.begin());
+
+    //if diff is not empty, some symbols in non_terminals[found_non_term].first_set
+    // are not in non_terminals[cur_non_term].first_set
+    if(!diff.empty())
+    {
+        //append the diff to non_terminals[cur_non_term].first_set
+        non_terminals[cur_non_term].first_set.insert(non_terminals[cur_non_term].first_set.begin(),
+                                                     diff.begin(), diff.end()
+                                                    );
+        //sort non_terminals[cur_non_term].first_set
+        sort(non_terminals[cur_non_term].first_set.begin(), non_terminals[cur_non_term].first_set.end());
+        //set sets_changed to true
+        sets_changed = true;
+    }
     //endif
 }
 
 //Keeps adding the FIRST sets of non-terminals whose FIRST sets contain "#" until a terminating FIRST set is encountered
 void first_rule_4(int symbol_index)
 {
-    //bool terminated = false
-    //symbol = symbol_index
-    //do
-        //if non_terminals[cur_non_term].productions[cur_prod][symbol] is a terminal
-            //call rule 1
-            //terminated = true
-        //else, the symbol is a non-terminal
-            //use rule 3 to add symbol's FIRST set to cur_non_term's FIRST set
-            //symbol++
-        //endif
-    //while terminated == false && symbol < non_terminals[cur_non_term].productions[cur_prod].size()
 
-    //if terminated == false, all FIRST sets in the production rule
+    bool terminated = false;        //flag to check if a terminating symbol was reached
+    int symbol = symbol_index;      //tracks current symbol without modifying starting index
+
+    //Iterate through the production rule, adding FIRST sets,
+    // until a terminating symbol or the end of the rule is reached
+    do
+    {
+        //if non_terminals[cur_non_term].productions[cur_prod][symbol] is a terminal
+        if(find_terminal(non_terminals[cur_non_term].productions[cur_prod][symbol]))
+        {
+            //call rule 1 to add the terminal to the FIRST set
+            first_rule_1(symbol);
+            //production rule terminates
+            terminated = true;
+        }
+        //else, the symbol is a non-terminal
+        else
+        {
+            //use rule 3 to add symbol's FIRST set to cur_non_term's FIRST set
+            first_rule_3(symbol);
+            //if symbol.first_set contains "#", move on to the next symbol
+            if(non_terminals[found_non_term].contains_empty_str)
+            {
+                symbol++;
+            }
+            //else, the production rule terminates
+            else
+            {
+                terminated = true;
+            }
+        }
+        //endif
+    }
+    while(terminated == false
+          && symbol < non_terminals[cur_non_term].productions[cur_prod].size());
+
+    //if terminated == false, all FIRST sets in the production rule contain "#"
+    if(!terminated)
+    {
         //call rule 2 to add "#" to cur_non_term's FIRST set
+        first_rule_2();
+    }
     //endif
+}
+
+void print_first_sets()
+{
+    //for all non_terminal in non_terminals
+    for(cur_non_term = 0; cur_non_term < non_terminals.size(); cur_non_term++)
+    {
+        //print "FIRST(" + non_terminal.symbol + ") = { "
+        cout << "FIRST(" + non_terminals[cur_non_term].symbol << ") = { ";
+        //for all symbol in non_terminal.first_set
+        for(int symbol = 0; symbol < non_terminals[cur_non_term].first_set.size(); symbol++)
+        {
+            //if this is the last symbol in the set, don't print the trailing comma
+            if(symbol == non_terminals[cur_non_term].first_set.size() - 1)
+            {
+                //print symbol + " "
+                cout << non_terminals[cur_non_term].first_set[symbol] << " ";
+            }
+            //else, print the trailing comma
+            else
+            {
+                //print symbol + ", "
+                cout << non_terminals[cur_non_term].first_set[symbol] << ", ";
+            }
+            //endif
+        }
+        //endfor
+
+        //print "}\n"
+        cout << "}" << endl;
+    }
+    //endfor
 }
