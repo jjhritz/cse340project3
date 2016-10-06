@@ -25,6 +25,7 @@ typedef struct non_terminal
     vector<string> first_set;
     bool contains_empty_str = false;    //flags if the FIRST set contains the empty string so "#" can be added to the set
     vector<string> follow_set;
+    bool contains_eof = false;          //flags if the FOLLOW set contains EOF so "$" can be added to the set
 
     //default constructor
     non_terminal()
@@ -94,19 +95,25 @@ void read_grammar();                        //reads the grammar from stdin
 void syntax_error();                        //generic function to alert user to syntax error.
 //add a new production rule slot to the non-terminal pointed to by non_term
 void new_production(const int non_term);
-void read_production();                      //read a production rule
-bool find_non_terminal(string symbol);       //determines if symbol is a non-terminal
-bool find_terminal(string symbol);           //determines if symbol is a terminal
+void read_production();                     //read a production rule
+bool find_non_terminal(string symbol);      //determines if symbol is a non-terminal
+bool find_terminal(string symbol);          //determines if symbol is a terminal
 
-void print_grammar_info();                   //prints information about the currently-loaded grammar
+void print_grammar_info();                  //prints information about the currently-loaded grammar
 
-void calc_first_sets();                      //calculates the first sets of the grammar
-void first_rule_1(int symbol_index);         //adds the terminal symbol at symbol_index to the FIRST set of the current non-terminal
-void first_rule_2();                         //flags "#" must be added to the FIRST set
-void first_rule_3(int symbol_index);         //adds the FIRST set of the symbol at symbol_index to the FIRST set of the current non-terminal
-void first_rule_4(int symbol_index);         //scans the list of symbols for a FIRST set that does not contain "#" and adds it to the FIRST set of the current non-terminal
-void print_first_sets();                     //prints the FIRST sets of the grammar
+void calc_first_sets();                     //calculates the first sets of the grammar
+void first_rule_1(int symbol_index);        //adds the terminal symbol at symbol_index to the FIRST set of the current non-terminal
+void first_rule_2();                        //flags "#" must be added to the FIRST set
+void first_rule_3(int symbol_index);        //adds the FIRST set of the symbol at symbol_index to the FIRST set of the current non-terminal
+void first_rule_4(int symbol_index);        //scans the list of symbols for a FIRST set that does not contain "#" and adds it to the FIRST set of the current non-terminal
+void print_first_sets();                    //prints the FIRST sets of the grammar
 
+void calc_follow_sets();                    //calculates the FOLLOW sets of the grammar
+void add_eof(int non_term);                 //flags that the FOLLOW set of non_term contains EOF
+void follow_rule_2(int symbol_index);       //adds the FOLLOW set of producing non-terminal to FOLLOW set of last terminal in rule
+void follow_rule_3(int symbol_index);       //scans the production rule to find a terminating symbol for the FOLLOW set
+//adds the FIRST set of the next non-terminal to the FOLLOW set of the non-terminal at symbol_index
+void follow_rule_4(int symbol_index, int next_symbol_index);
 
 
 #endif //CSE340PROJECT3_PROJECT3_H
