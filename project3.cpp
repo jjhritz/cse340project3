@@ -715,11 +715,11 @@ void calc_follow_sets()
     //for all non_terminal in non_terminals
     for(cur_non_term = 0; cur_non_term < non_terminals.size(); cur_non_term++)
     {
-        //if non_terminal.contains_empty_str == true
-        if(non_terminals[cur_non_term].contains_empty_str)
+        //if non_terminal.contains_empty_eof == true
+        if(non_terminals[cur_non_term].contains_eof)
         {
-            //add "#" to the front of non_terminal.first_set
-            non_terminals[cur_non_term].first_set.insert(non_terminals[cur_non_term].first_set.begin(), "#");
+            //add "$" to the front of non_terminal.follow_set
+            non_terminals[cur_non_term].follow_set.insert(non_terminals[cur_non_term].follow_set.begin(), "$");
         }
         //endif
     }
