@@ -14,7 +14,7 @@ using namespace std;
 
 int main (int argc, char* argv[])
 {
-    freopen("/home/student/ClionProjects/cse340project3/tests/test02.txt", "r", stdin);
+    freopen("/home/student/ClionProjects/cse340project3/tests/test04.txt", "r", stdin);
 
     int task;
 
@@ -47,8 +47,10 @@ int main (int argc, char* argv[])
         case 2:
             //Calculate FIRST sets for the input grammar
             calc_first_sets();
-            // TODO: Calculate FOLLOW sets for the input grammar
-            // TODO: Output the FOLLOW sets in the exact order and format required
+            //Calculate FOLLOW sets for the input grammar
+            calc_follow_sets();
+            //Output the FOLLOW sets in the exact order and format required
+            print_follow_sets();
             break;
 
         default:
@@ -662,7 +664,7 @@ void print_first_sets()
     //endfor
 }
 
-//calculates the FOLLOw sets in the grammar
+//calculates the FOLLOW sets in the grammar
 void calc_follow_sets()
 {
     int symbol;                     //the current symbol to be added to the FIRST set of the current non-terminal
@@ -731,39 +733,84 @@ void calc_follow_sets()
 void follow_rule_2(int symbol_index)
 {
     int cur_symbol;             //the symbol whose FOLLOW set will be added to
+
     //find the non-terminal indicated by symbol_index
+    find_non_terminal(non_terminals[cur_non_term].productions[cur_prod][symbol_index]);
     //store found_non_term in cur_symbol
+    cur_symbol = found_non_term;
+
     //if cur_symbol.follow_set is empty
+    if(non_terminals[cur_symbol].follow_set.empty())
+    {
         //if cur_non_term.follow_set is not empty
+        if(!non_terminals[cur_non_term].follow_set.empty())
+        {
             //assign cur_non_term.follow_set to cur_symbol.follow_set
+            non_terminals[cur_symbol].follow_set.assign(non_terminals[cur_non_term].follow_set.begin(),
+                                                        non_terminals[cur_non_term].follow_set.end()
+                                                        );
+        }
         //endif
+    }
     //else, cur_symbol.follow_set is not empty and the two FOLLOW sets must be tested for differences
-        //create iterator to store end position of difference set
-        //create vector to store the difference set
+    else
+    {
+        //create vector to store set difference
+        vector<string> diff(20);
+
+        //iterator that will point to the last element of the difference
+        //needed to know where the end of the non-junk content is so diff can be resized
+        vector<string>::iterator it;
 
         //sort both cur_symbol.follow_set and cur_non_term.follow_set
+        sort(non_terminals[cur_non_term].follow_set.begin(), non_terminals[cur_non_term].follow_set.end());
+        sort(non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end());
 
         //set difference between cur_symbol.follow_set and cur_non_term.follow_set
         //ORDER IS IMPORTANT.
         // std::set_difference checks for elements that are present in the set provided by the first two arguments
         // but are not present in the set provided by the second two arguments
+       it = set_difference(non_terminals[cur_non_term].follow_set.begin(), non_terminals[cur_non_term].follow_set.end(),
+                           non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end(),
+                           diff.begin()
+                            );
 
         //resize the difference vector to fit its non-junk contents
+        diff.resize(it - diff.begin());
 
         //if the difference vector is not empty, there are elements in cur_non_term.follow_set
         //that are not in cur_symbol.follow_set and therefore must be added
+        if(!diff.empty())
+        {
             //create a vector to store the set union
+            vector<string> follow_union(20);
             //perform set union between cur_symbol.follow_set and cur_non_term.follow_set and store in the union vector
+            // but are not present in the set provided by the second two arguments
+            it = set_union(non_terminals[cur_non_term].follow_set.begin(), non_terminals[cur_non_term].follow_set.end(),
+                           non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end(),
+                           follow_union.begin()
+                            );
             //resize set union to fit its non-junk contents
+            follow_union.resize(it - follow_union.begin());
             //copy union set into cur_symbol.follow_set
+            non_terminals[cur_symbol].follow_set.assign(follow_union.begin(), follow_union.end());
             //sort cur_symbol.follow_set
+            sort(non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end());
             //flag sets_changed as true
+            sets_changed = true;
+        }
         //endif
+    }
     //endif
 
     //if cur_symbol.follow_set does not contain EOF and cur_non_term.follow_set contains EOF
+    if(non_terminals[cur_non_term].contains_eof && !non_terminals[cur_symbol].contains_eof)
+    {
         //flag cur_symbol.contains_eof as true
+        non_terminals[cur_symbol].contains_eof = true;
         //flag sets_changed as true
+        sets_changed = true;
+    }
     //endif
 }
 
@@ -775,24 +822,50 @@ void follow_rule_3(int symbol_index)
     int next_symbol = symbol_index + 1;     //tracks what the next symbol in the production rule is
 
     //find the non-terminal indicated by symbol_index
+    find_non_terminal(non_terminals[cur_non_term].productions[cur_prod][symbol_index]);
     //store found_non_term in cur_symbol
+    cur_symbol = found_non_term;
 
     //while the rule has not terminated and we are not at the end of the rule
+    while(!terminated && next_symbol < non_terminals[cur_non_term].productions[cur_prod].size())
+    {
         //if next_symbol is a non-terminal
+        if(find_non_terminal(non_terminals[cur_non_term].productions[cur_prod][next_symbol]))
+        {
             //run rule 4 to add next_symbol.first_set to cur_symbol.follow_set
+            follow_rule_4(symbol_index, next_symbol);
             //if the FIRST set of next_symbol contains the empty string
+            if(non_terminals[found_non_term].contains_empty_str)
+            {
                 //increment next_symbol
+                next_symbol++;
+            }
             //else, the production rule won't add the the FOLLOW set anymore
+            else
+            {
                 //flag terminated as true
+                terminated = true;
+            }
             //endif
+        }
         //else, next_symbol is a terminal and the production rule won't add the the FOLLOW set anymore
+        else
+        {
             //run rule 4 to add the terminal to cur_symbol.follow_set
+            follow_rule_4(cur_symbol, next_symbol);
             //flag terminated as true
+            terminated = true;
+        }
         //endif
+    }
     //endwhile
 
     //if terminated is false, we reached the end of the production rule without a terminating symbol
+    if(!terminated)
+    {
         //run rule 2 to add the FOLLOW set of the production non-terminal to cur_symbol.follow_set
+        follow_rule_2(cur_symbol);
+    }
     //endif
 }
 
@@ -800,50 +873,118 @@ void follow_rule_3(int symbol_index)
 void follow_rule_4(int symbol_index, int next_symbol_index)
 {
     int cur_symbol;                 //the symbol whose FOLLOW set will be added to
+    int next_symbol;                //the next symbol whose FIRST set will be added to the FOLLOW set of cur_symbol
 
     //find the non-terminal indicated by symbol_index
+    find_non_terminal(non_terminals[cur_non_term].productions[cur_prod][symbol_index]);
     //store found_non_term in cur_symbol
+    cur_symbol = found_non_term;
+
+    //find the non-terminal indicated by next_symbol_index
+    find_non_terminal(non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]);
+    //store found_non_term in next_symbol
+    next_symbol = found_non_term;
+
 
     //if next_symbol_index is a terminal
+    if(find_terminal(non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]))
+    {
         //add the symbol at next_symbol_index to cur_symbol.follow_set
+        non_terminals[cur_symbol].follow_set.push_back(non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]);
         //sort cur_symbol.follow_set
+        sort(non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end());
+        //flag sets_changed as true
+        sets_changed = true;
+    }
     //else, next_symbol_index is a non-terminal
+    else
+    {
         //if cur_symbol.follow_set is empty
-            //if found_non_term.first_set is not empty
-                //assign found_non_term.first_set to cur_symbol.follow_set
+        if(non_terminals[cur_symbol].follow_set.empty())
+        {
+            //if next_symbol.first_set is not empty
+            if(!non_terminals[next_symbol].first_set.empty())
+            {
+                //assign next_symbol.first_set to cur_symbol.follow_set
+                non_terminals[cur_symbol].follow_set.assign(non_terminals[next_symbol].first_set.begin(),
+                                                            non_terminals[next_symbol].first_set.end());
+                //flag sets_changed as true
+                sets_changed = true;
+            }
             //endif
+        }
         //else, cur_symbol.follow_set is not empty and the two sets must be tested for differences
-            //create iterator to store end position of difference set
-            //create vector to store the difference set
+        else
+        {
+            //create vector to store set difference
+            vector<string> diff(20);
 
-            //sort both cur_symbol.follow_set and found_non_term.first_set
+            //iterator that will point to the last element of the difference
+            //needed to know where the end of the non-junk content is so diff can be resized
+            vector<string>::iterator it;
 
-            //set difference between cur_symbol.follow_set and found_non_term.first_set
+            //sort both cur_symbol.follow_set and next_symbol.first_set
+            sort(non_terminals[next_symbol].first_set.begin(), non_terminals[next_symbol].first_set.end());
+            sort(non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end());
+
+            //set difference between cur_symbol.follow_set and next_symbol.first_set
             //ORDER IS IMPORTANT.
             // std::set_difference checks for elements that are present in the set provided by the first two arguments
             // but are not present in the set provided by the second two arguments
+            it = set_difference(non_terminals[next_symbol].first_set.begin(), non_terminals[next_symbol].first_set.end(),
+                                non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end(),
+                                diff.begin()
+                                );
 
             //resize the difference vector to fit its non-junk contents
+            diff.resize(it - diff.begin());
 
-            //if the difference vector is not empty, there are elements in found_non_term.first_set
+            //if the difference vector is not empty, there are elements in next_symbol.first_set
             //that are not in cur_symbol.follow_set and therefore must be added
+            if(!diff.empty())
+            {
                 //create a vector to store the set union
-                //perform set union between cur_symbol.follow_set and found_non_term.first_set and store in the union vector
+                vector<string> follow_union(20);
+                //perform set union between cur_symbol.follow_set and next_symbol.first_set and store in the union vector
+                it = set_union(non_terminals[next_symbol].first_set.begin(), non_terminals[next_symbol].first_set.end(),
+                                    non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end(),
+                                    diff.begin()
+                                );
                 //resize set union to fit its non-junk contents
+                follow_union.resize(it - follow_union.begin());
                 //copy union set into cur_symbol.follow_set
+                non_terminals[cur_symbol].follow_set.assign(follow_union.begin(),follow_union.end());
                 //sort cur_symbol.follow_set
+                sort(non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end());
                 //flag sets_changed as true
+                sets_changed = true;
+            }
             //endif
+        }
         //endif
 
-        //if cur_symbol.follow_set does not contain EOF and cur_non_term.follow_set contains EOF
+        //if cur_symbol.follow_set does not contain EOF and next_symbol.follow_set contains EOF
+        if(!non_terminals[cur_symbol].contains_eof && non_terminals[next_symbol].contains_eof)
+        {
             //flag cur_symbol.contains_eof as true
+            non_terminals[cur_symbol].contains_eof = true;
             //flag sets_changed as true
+            sets_changed = true;
+        }
         //endif
 
-        //if found_non_term contains the empty string
+        //if next_symbol contains the empty string
+        if(non_terminals[next_symbol].contains_empty_str)
+        {
             //delete "#" from cur_symbol.follow_set
+            non_terminals[cur_symbol].follow_set.erase(remove(non_terminals[cur_symbol].follow_set.begin(),
+                                                              non_terminals[cur_symbol].follow_set.end(),
+                                                              "#"),
+                                                       non_terminals[cur_symbol].follow_set.end()
+                                                        );
+        }
         //endif
+    }
     //endif
 }
 
@@ -852,4 +993,37 @@ void add_eof(int non_term)
 {
     //flag non_term.contains_eof as true
     non_terminals[non_term].contains_eof = true;
+}
+
+//prints the FOLLOW sets of the grammar
+void print_follow_sets()
+{
+    //for all non_terminal in non_terminals
+    for(cur_non_term = 0; cur_non_term < non_terminals.size(); cur_non_term++)
+    {
+        //print "FIRST(" + non_terminal.symbol + ") = { "
+        cout << "FOLLOW(" + non_terminals[cur_non_term].symbol << ") = { ";
+        //for all symbol in non_terminal.follow_set
+        for(int symbol = 0; symbol < non_terminals[cur_non_term].follow_set.size(); symbol++)
+        {
+            //if this is the last symbol in the set, don't print the trailing comma
+            if(symbol == non_terminals[cur_non_term].follow_set.size() - 1)
+            {
+                //print symbol + " "
+                cout << non_terminals[cur_non_term].follow_set[symbol] << " ";
+            }
+                //else, print the trailing comma
+            else
+            {
+                //print symbol + ", "
+                cout << non_terminals[cur_non_term].follow_set[symbol] << ", ";
+            }
+            //endif
+        }
+        //endfor
+
+        //print "}\n"
+        cout << "}" << endl;
+    }
+    //endfor
 }

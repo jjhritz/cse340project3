@@ -81,7 +81,7 @@ vector<terminal>::iterator cur_term;            //the current terminal returned 
 
 int cur_term;                               //index of the current terminal
 int found_term;                             //index of the terminal found in a search
-int cur_non_term;                           //index of the current non-terminal
+int cur_non_term;                           //index of the current non-terminal; for FIRST and FOLLOW, this is the LHS
 int found_non_term;                         //index of the non-terminal found in a search
 int cur_prod;                               //index of the current production rule
 
@@ -106,6 +106,7 @@ void first_rule_1(int symbol_index);        //adds the terminal symbol at symbol
 void first_rule_2();                        //flags "#" must be added to the FIRST set
 void first_rule_3(int symbol_index);        //adds the FIRST set of the symbol at symbol_index to the FIRST set of the current non-terminal
 void first_rule_4(int symbol_index);        //scans the list of symbols for a FIRST set that does not contain "#" and adds it to the FIRST set of the current non-terminal
+
 void print_first_sets();                    //prints the FIRST sets of the grammar
 
 void calc_follow_sets();                    //calculates the FOLLOW sets of the grammar
@@ -115,5 +116,6 @@ void follow_rule_3(int symbol_index);       //scans the production rule to find 
 //adds the FIRST set of the next non-terminal to the FOLLOW set of the non-terminal at symbol_index
 void follow_rule_4(int symbol_index, int next_symbol_index);
 
+void print_follow_sets();                   //prints the FOLLOW sets of the grammar
 
 #endif //CSE340PROJECT3_PROJECT3_H
