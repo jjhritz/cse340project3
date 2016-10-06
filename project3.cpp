@@ -714,6 +714,7 @@ void calc_follow_sets()
     }
     while(sets_changed == true);
 
+    //add "$" to all FOLLOW sets that have contain_eof flagged as true
     //for all non_terminal in non_terminals
     for(cur_non_term = 0; cur_non_term < non_terminals.size(); cur_non_term++)
     {
@@ -724,6 +725,19 @@ void calc_follow_sets()
             non_terminals[cur_non_term].follow_set.insert(non_terminals[cur_non_term].follow_set.begin(), "$");
         }
         //endif
+    }
+    //endfor
+
+    //remove all instances of "#" added to FOLLOW sets by FIRST sets
+    //for all non_terminal in non_terminals
+    for(cur_non_term = 0; cur_non_term < non_terminals.size(); cur_non_term++)
+    {
+        //delete "#" from cur_symbol.follow_set
+        non_terminals[cur_non_term].follow_set.erase(remove(non_terminals[cur_non_term].follow_set.begin(),
+                                                          non_terminals[cur_non_term].follow_set.end(),
+                                                          "#"),
+                                                   non_terminals[cur_non_term].follow_set.end()
+        );
     }
     //endfor
 }
@@ -840,7 +854,7 @@ void follow_rule_3(int symbol_index)
             //if the FIRST set of next_symbol contains the empty string
             if(non_terminals[found_non_term].contains_empty_str)
             {
-                //increment next_symbol
+                //Move to the next symbol in the production rule
                 next_symbol++;
             }
             //else, the production rule won't add the the FOLLOW set anymore
@@ -855,7 +869,7 @@ void follow_rule_3(int symbol_index)
         else
         {
             //run rule 4 to add the terminal to cur_symbol.follow_set
-            follow_rule_4(cur_symbol, next_symbol);
+            follow_rule_4(symbol_index, next_symbol);
             //flag terminated as true
             terminated = true;
         }
@@ -867,7 +881,7 @@ void follow_rule_3(int symbol_index)
     if(!terminated)
     {
         //run rule 2 to add the FOLLOW set of the production non-terminal to cur_symbol.follow_set
-        follow_rule_2(cur_symbol);
+        follow_rule_2(symbol_index);
     }
     //endif
 }
@@ -887,19 +901,32 @@ void follow_rule_4(int symbol_index, int next_symbol_index)
     //if next_symbol_index is a terminal
     if(find_terminal(non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]))
     {
-        vector<string>::iterator it;
-        //if the terminal does not exist in cur_symbol.follow_set
-        it = find(non_terminals[cur_symbol].follow_set.begin(),
-                  non_terminals[cur_symbol].follow_set.end(),
-                  non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]);
-        if(it == non_terminals[cur_symbol].follow_set.end())
+        //if cur_symbol.follow_set is empty, just add the terminal
+        if(non_terminals[cur_symbol].follow_set.empty())
         {
             //add the symbol at next_symbol_index to cur_symbol.follow_set
             non_terminals[cur_symbol].follow_set.push_back(non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]);
-            //sort cur_symbol.follow_set
-            sort(non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end());
             //flag sets_changed as true
             sets_changed = true;
+        }
+        //else, cur_symbol.follow_set is empty not empty and we need to check if next_symbol is in it.
+        else
+        {
+            vector<string>::iterator it;
+            //if the terminal does not exist in cur_symbol.follow_set
+            it = find(non_terminals[cur_symbol].follow_set.begin(),
+                      non_terminals[cur_symbol].follow_set.end(),
+                      non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]);
+            if(it == non_terminals[cur_symbol].follow_set.end())
+            {
+                //add the symbol at next_symbol_index to cur_symbol.follow_set
+                non_terminals[cur_symbol].follow_set.push_back(non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]);
+                //sort cur_symbol.follow_set
+                sort(non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end());
+                //flag sets_changed as true
+                sets_changed = true;
+            }
+            //endif
         }
         //endif
     }
@@ -959,8 +986,8 @@ void follow_rule_4(int symbol_index, int next_symbol_index)
                 vector<string> follow_union(20);
                 //perform set union between cur_symbol.follow_set and next_symbol.first_set and store in the union vector
                 it = set_union(non_terminals[next_symbol].first_set.begin(), non_terminals[next_symbol].first_set.end(),
-                                    non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end(),
-                                    diff.begin()
+                               non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end(),
+                               follow_union.begin()
                                 );
                 //resize set union to fit its non-junk contents
                 follow_union.resize(it - follow_union.begin());
@@ -975,6 +1002,7 @@ void follow_rule_4(int symbol_index, int next_symbol_index)
         }
         //endif
 
+        //if next_symbol has EOF and cur_symbol does not, add EOF to cur_symbol
         //if cur_symbol.follow_set does not contain EOF and next_symbol.follow_set contains EOF
         if(!non_terminals[cur_symbol].contains_eof && non_terminals[next_symbol].contains_eof)
         {
@@ -985,17 +1013,6 @@ void follow_rule_4(int symbol_index, int next_symbol_index)
         }
         //endif
 
-        //if next_symbol contains the empty string
-        if(non_terminals[next_symbol].contains_empty_str)
-        {
-            //delete "#" from cur_symbol.follow_set
-            non_terminals[cur_symbol].follow_set.erase(remove(non_terminals[cur_symbol].follow_set.begin(),
-                                                              non_terminals[cur_symbol].follow_set.end(),
-                                                              "#"),
-                                                       non_terminals[cur_symbol].follow_set.end()
-                                                        );
-        }
-        //endif
     }
     //endif
 }
