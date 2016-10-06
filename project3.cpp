@@ -14,7 +14,7 @@ using namespace std;
 
 int main (int argc, char* argv[])
 {
-    freopen("/home/student/ClionProjects/cse340project3/tests/test03.txt", "r", stdin);
+    //freopen("/home/student/ClionProjects/cse340project3/tests/test07.txt", "r", stdin);
 
     int task;
 
@@ -718,7 +718,7 @@ void calc_follow_sets()
     //for all non_terminal in non_terminals
     for(cur_non_term = 0; cur_non_term < non_terminals.size(); cur_non_term++)
     {
-        //if non_terminal.contains_empty_eof == true
+        //if non_terminal.contains_eof == true
         if(non_terminals[cur_non_term].contains_eof)
         {
             //add "$" to the front of non_terminal.follow_set
@@ -1001,18 +1001,6 @@ void follow_rule_4(int symbol_index, int next_symbol_index)
             //endif
         }
         //endif
-
-        //if next_symbol has EOF and cur_symbol does not, add EOF to cur_symbol
-        //if cur_symbol.follow_set does not contain EOF and next_symbol.follow_set contains EOF
-        if(!non_terminals[cur_symbol].contains_eof && non_terminals[next_symbol].contains_eof)
-        {
-            //flag cur_symbol.contains_eof as true
-            non_terminals[cur_symbol].contains_eof = true;
-            //flag sets_changed as true
-            sets_changed = true;
-        }
-        //endif
-
     }
     //endif
 }
