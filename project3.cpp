@@ -14,7 +14,7 @@ using namespace std;
 
 int main (int argc, char* argv[])
 {
-    freopen("/home/student/ClionProjects/cse340project3/tests/test04.txt", "r", stdin);
+    freopen("/home/student/ClionProjects/cse340project3/tests/test03.txt", "r", stdin);
 
     int task;
 
@@ -688,7 +688,7 @@ void calc_follow_sets()
                 for(symbol = 0; symbol < non_terminals[cur_non_term].productions[cur_prod].size(); symbol++)
                 {
                     //if symbol is a non-terminal
-                    if(find_terminal(non_terminals[cur_non_term].productions[cur_prod][symbol]))
+                    if(find_non_terminal(non_terminals[cur_non_term].productions[cur_prod][symbol]))
                     {
                         //if symbol == cur_prod.size - 1 (i.e., it's at the end of the production rule)
                         if(symbol == non_terminals[cur_non_term].productions[cur_prod].size() - 1)
@@ -749,6 +749,9 @@ void follow_rule_2(int symbol_index)
             non_terminals[cur_symbol].follow_set.assign(non_terminals[cur_non_term].follow_set.begin(),
                                                         non_terminals[cur_non_term].follow_set.end()
                                                         );
+
+            //flag sets_changed as true
+            sets_changed = true;
         }
         //endif
     }
@@ -770,7 +773,7 @@ void follow_rule_2(int symbol_index)
         //ORDER IS IMPORTANT.
         // std::set_difference checks for elements that are present in the set provided by the first two arguments
         // but are not present in the set provided by the second two arguments
-       it = set_difference(non_terminals[cur_non_term].follow_set.begin(), non_terminals[cur_non_term].follow_set.end(),
+        it = set_difference(non_terminals[cur_non_term].follow_set.begin(), non_terminals[cur_non_term].follow_set.end(),
                            non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end(),
                            diff.begin()
                             );
@@ -880,25 +883,34 @@ void follow_rule_4(int symbol_index, int next_symbol_index)
     //store found_non_term in cur_symbol
     cur_symbol = found_non_term;
 
-    //find the non-terminal indicated by next_symbol_index
-    find_non_terminal(non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]);
-    //store found_non_term in next_symbol
-    next_symbol = found_non_term;
-
 
     //if next_symbol_index is a terminal
     if(find_terminal(non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]))
     {
-        //add the symbol at next_symbol_index to cur_symbol.follow_set
-        non_terminals[cur_symbol].follow_set.push_back(non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]);
-        //sort cur_symbol.follow_set
-        sort(non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end());
-        //flag sets_changed as true
-        sets_changed = true;
+        vector<string>::iterator it;
+        //if the terminal does not exist in cur_symbol.follow_set
+        it = find(non_terminals[cur_symbol].follow_set.begin(),
+                  non_terminals[cur_symbol].follow_set.end(),
+                  non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]);
+        if(it == non_terminals[cur_symbol].follow_set.end())
+        {
+            //add the symbol at next_symbol_index to cur_symbol.follow_set
+            non_terminals[cur_symbol].follow_set.push_back(non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]);
+            //sort cur_symbol.follow_set
+            sort(non_terminals[cur_symbol].follow_set.begin(), non_terminals[cur_symbol].follow_set.end());
+            //flag sets_changed as true
+            sets_changed = true;
+        }
+        //endif
     }
     //else, next_symbol_index is a non-terminal
     else
     {
+        //find the non-terminal indicated by next_symbol_index
+        find_non_terminal(non_terminals[cur_non_term].productions[cur_prod][next_symbol_index]);
+        //store found_non_term in next_symbol
+        next_symbol = found_non_term;
+
         //if cur_symbol.follow_set is empty
         if(non_terminals[cur_symbol].follow_set.empty())
         {
